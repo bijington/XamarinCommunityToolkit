@@ -32,32 +32,44 @@ namespace Xamarin.CommunityToolkit.Behaviors
 			=> ((AnimationBase<TView>)bindable).DefaultDuration;
 
 		protected abstract uint DefaultDuration { get; set; }
+	}
 
-		public abstract Task Animate(TView? view);
+	public abstract class NonAsyncAnimationBase : AnimationBase<View>
+	{
+		IAnimatable? owner;
+		string? name;
 
-		// TODO: Wrap this (no pun intended) in another base class just for the pre-built types.
-		public AnimationWrapper CreateAnimation(
+		/// <summary>
+		/// Stops the animation.
+		/// </summary>
+		/// <returns>True if successful, false otherwise.</returns>
+		public bool Abort() => owner.AbortAnimation(name);
+
+		/// <summary>
+		/// Runs the animation.
+		/// </summary>
+		public void Animate(
+			string name = "",
 			uint rate = 16,
 			Action<double, bool>? onFinished = null,
 			Func<bool>? shouldRepeat = null,
-			params View[] views) =>
-			new AnimationWrapper(
-				CreateAnimation(views),
-				Guid.NewGuid().ToString(),
-				views.First(),
-				rate,
-				Duration,
-				Easing,
-				onFinished,
-				shouldRepeat);
-
-		protected virtual Animation CreateAnimation(params View[] views)
+			params View[] views)
 		{
-			return new Animation();
+			owner = views.First();
+			this.name = name + Guid.NewGuid().ToString();
+			CreateAnimation(views).Commit(owner, this.name, rate, Duration, Easing, onFinished, shouldRepeat);
 		}
+
+		/// <summary>
+		/// Gets a value indicating whether the animation is running.
+		/// </summary>
+		public bool IsRunning => owner.AnimationIsRunning(name);
+
+		protected abstract Animation CreateAnimation(params View[] views);
 	}
 
 	public abstract class AnimationBase : AnimationBase<View>
 	{
+		public abstract Task Animate(View? view);
 	}
 }

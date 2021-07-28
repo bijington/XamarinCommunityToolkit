@@ -8,7 +8,7 @@ namespace Xamarin.CommunityToolkit.Behaviors
 	public class AnimationBehavior : EventToCommandBehavior
 	{
 		public static readonly BindableProperty AnimationTypeProperty =
-			BindableProperty.Create(nameof(AnimationType), typeof(AnimationBase), typeof(AnimationBehavior));
+			BindableProperty.Create(nameof(AnimationType), typeof(AnimationBase<View>), typeof(AnimationBehavior));
 
 		internal static readonly BindablePropertyKey AnimateCommandPropertyKey =
  			BindableProperty.CreateReadOnly(
@@ -21,9 +21,9 @@ namespace Xamarin.CommunityToolkit.Behaviors
 
 		public static readonly BindableProperty AnimateCommandProperty = AnimateCommandPropertyKey.BindableProperty;
 
-		public AnimationBase? AnimationType
+		public AnimationBase<View>? AnimationType
 		{
-			get => (AnimationBase?)GetValue(AnimationTypeProperty);
+			get => (AnimationBase<View>?)GetValue(AnimationTypeProperty);
 			set => SetValue(AnimationTypeProperty, value);
 		}
 
@@ -70,8 +70,10 @@ namespace Xamarin.CommunityToolkit.Behaviors
 
 			isAnimating = true;
 
-			if (AnimationType != null)
-				await AnimationType.Animate((View?)View);
+			if (AnimationType is AnimationBase animationBase)
+				await animationBase.Animate((View?)View);
+			else if (AnimationType is NonAsyncAnimationBase nonAsyncAnimation && View != null)
+				nonAsyncAnimation.Animate(views: (View)View); // TODO: reset isAnimating inside onFinished or wrap Animate inside a TaskCompletionSource
 
 			isAnimating = false;
 		}

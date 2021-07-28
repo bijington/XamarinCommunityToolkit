@@ -7,7 +7,7 @@ namespace Xamarin.CommunityToolkit.Sample.ViewModels.Animations
 {
 	public class AnimationViewModel : BaseViewModel
 	{
-		AnimationWrapper? currentAnimation;
+		NonAsyncAnimationBase? currentAnimation;
 		AnimationDetailViewModel? selectedAnimation;
 
 		public ObservableCollection<AnimationDetailViewModel> Animations { get; }
@@ -19,14 +19,15 @@ namespace Xamarin.CommunityToolkit.Sample.ViewModels.Animations
 		}
 
 		public Command StartAnimationCommand { get; }
+
 		public Command StopAnimationCommand { get; }
 
 		public AnimationViewModel()
 		{
 			Animations = new ObservableCollection<AnimationDetailViewModel>
 			{
-				new AnimationDetailViewModel("Tada", (view, onFinished) => new TadaAnimationType().CreateAnimation(onFinished: onFinished, views: view)),
-				//new AnimationDetailViewModel("RubberBand", (view, onFinished) => new RubberBandAnimation(onFinished: onFinished, views: view))
+				new AnimationDetailViewModel("Tada", () => new TadaAnimationType()),
+				new AnimationDetailViewModel("RubberBand", () => new RubberBandAnimationType())
 			};
 
 			SelectedAnimation = Animations.First();
@@ -41,13 +42,15 @@ namespace Xamarin.CommunityToolkit.Sample.ViewModels.Animations
 				currentAnimation.Abort();
 			}
 
-			currentAnimation = SelectedAnimation!.CreateAnimation(view, (d, b) =>
-			{
-				StartAnimationCommand.ChangeCanExecute();
-				StopAnimationCommand.ChangeCanExecute();
-			});
+			currentAnimation = SelectedAnimation!.CreateAnimation();
 
-			currentAnimation.Commit();
+			currentAnimation.Animate(
+				onFinished: (d, b) =>
+				{
+					StartAnimationCommand.ChangeCanExecute();
+					StopAnimationCommand.ChangeCanExecute();
+				},
+				views: view);
 
 			StopAnimationCommand.ChangeCanExecute();
 		}
